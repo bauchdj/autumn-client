@@ -1,0 +1,35 @@
+{
+	"name": "autumn-client",
+	"version": "0.0.0",
+	"description": "Client SDK for Autumn API",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc",
+		"generate-types": "openapi-typescript ./openapi.json --output ./src/types.generated.ts",
+		"prebuild": "bun run generate-types",
+		"test": "bun test",
+		"prepublishOnly": "bun run build"
+	},
+	"keywords": [
+		"sdk",
+		"client",
+		"api"
+	],
+	"author": "",
+	"license": "MIT",
+	"devDependencies": {
+		"@hey-api/openapi-ts": "^0.66.3",
+		"@types/node": "^20.0.0",
+		"bun-types": "^1.0.0",
+		"openapi-typescript": "^7.0.0",
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@hey-api/client-fetch": "^0.10.0",
+		"openapi-fetch": "^0.10.0"
+	},
+	"peerDependencies": {
+		"bun": "^1.0.0"
+	}
+}
