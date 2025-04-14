@@ -1,5 +1,5 @@
-import { client } from "./client.gen";
-import { postEntitled } from "./sdk.gen";
+import { client } from "./client/client.gen";
+import { postEntitled } from "./client/sdk.gen";
 
 client.setConfig({
 	headers: {
