@@ -1,22 +1,22 @@
-import { AutumnClient } from ".";
+import { client } from "./client.gen";
+import { postEntitled } from "./sdk.gen";
 
-const apiKey = process.env.AUTUMN_API_KEY;
+client.setConfig({
+	headers: {
+		Authorization: `Bearer ${process.env.AUTUMN_API_KEY}`,
+	},
+});
 
-if (!apiKey) {
-	throw new Error("Missing Autumn API key");
+async function main() {
+	const response = await postEntitled({
+		client,
+		body: {
+			customer_id: "",
+			feature_id: "",
+		},
+	});
+
+	console.log(response);
 }
 
-const client = new AutumnClient(apiKey);
-
-client
-	.entitled({
-		customer_id: "your-customer-id",
-		feature_id: "your-feature-id",
-	})
-	.then((result) => {
-		if (result.error) {
-			console.error(result.error);
-		} else {
-			console.log(result.data);
-		}
-	});
+main();
