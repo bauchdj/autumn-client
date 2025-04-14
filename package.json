@@ -6,8 +6,6 @@
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "tsc",
-		"generate-types": "openapi-typescript ./openapi.json --output ./src/types.generated.ts",
-		"prebuild": "bun run generate-types",
 		"test": "bun test",
 		"prepublishOnly": "bun run build"
 	},
