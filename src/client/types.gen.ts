@@ -94,7 +94,7 @@ export type AttachData = {
   };
   path?: never;
   query?: never;
-  url: '/attach';
+  url: "/attach";
 };
 
 export type AttachResponses = {
@@ -131,7 +131,7 @@ export type CustomersData = {
   } & CustomerData;
   path?: never;
   query?: never;
-  url: '/customers';
+  url: "/customers";
 };
 
 export type CustomersResponses = {
@@ -150,7 +150,7 @@ export type BillingPortalData = {
     customer_id: string;
   };
   query?: never;
-  url: '/customers/{customer_id}/billing_portal';
+  url: "/customers/{customer_id}/billing_portal";
 };
 
 export type BillingPortalResponses = {
@@ -181,7 +181,7 @@ export type EventsData = {
     };
   path?: never;
   query?: never;
-  url: '/events';
+  url: "/events";
 };
 
 export type EventsResponses = {
@@ -213,7 +213,7 @@ export type EntitledData = {
   };
   path?: never;
   query?: never;
-  url: '/entitled';
+  url: "/entitled";
 };
 
 export type EntitledResponses = {
@@ -248,5 +248,5 @@ export type EntitledResponses = {
 export type EntitledResponse = EntitledResponses[keyof EntitledResponses];
 
 export type ClientOptions = {
-  baseUrl: 'https://api.useautumn.com/v1' | (string & {});
+  baseUrl: "https://api.useautumn.com/v1" | (string & {});
 };
