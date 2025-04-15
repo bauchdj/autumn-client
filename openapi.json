@@ -1,479 +1,484 @@
 {
-	"openapi": "3.0.1",
-	"info": {
-		"title": "Autumn API",
-		"description": "API to interact with Autumn",
-		"license": {
-			"name": "MIT"
-		},
-		"version": "1.0.0"
-	},
-	"servers": [
-		{
-			"url": "https://api.useautumn.com/v1"
-		}
-	],
-	"security": [
-		{
-			"secretKeyAuth": []
-		}
-	],
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Autumn API",
+    "description": "API to interact with Autumn",
+    "license": {
+      "name": "MIT"
+    },
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.useautumn.com/v1"
+    }
+  ],
+  "security": [
+    {
+      "secretKeyAuth": []
+    }
+  ],
 
-	"paths": {
-		"/attach": {
-			"post": {
-				"security": [
-					{
-						"publishableKeyAuthAttach": []
-					}
-				],
-				"description": "Returns a Stripe Checkout URL for the customer to complete their purchase, or handles the purchase if the customer's card is already on file.",
-				"requestBody": {
-					"description": "Customer and product to attach",
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"required": ["customer_id", "product_id"],
-								"properties": {
-									"customer_id": {
-										"type": "string",
-										"description": "Your unique identifier for the customer"
-									},
-									"product_id": {
-										"type": "string",
-										"description": "Product ID, set when creating the product in the Autumn dashboard"
-									},
-									"product_ids": {
-										"type": "array",
-										"description": "List of product IDs to attach to the customer in the same subscription or transaction",
-										"items": {
-											"type": "string"
-										}
-									},
-									"success_url": {
-										"type": "string",
-										"description": "URL to redirect to after the purchase is successful"
-									},
-									"force_checkout": {
-										"type": "boolean",
-										"default": false,
-										"description": "Always return a Stripe Checkout URL, even if the customer's card is already on file."
-									},
-									"options": {
-										"type": "array",
-										"description": "An array of billing options for the product. Required for some pricing types.",
-										"items": {
-											"type": "object",
-											"properties": {
-												"feature_id": {
-													"type": "string",
-													"description": "Feature ID of the feature that will be affected by the options."
-												},
-												"quantity": {
-													"type": "integer",
-													"description": "Quantity of the feature (eg number of seats) to be purchased. Required if billing is in-advance usage-based."
-												},
-												"threshold": {
-													"type": "integer",
-													"description": "Customer will be charged for this product when the balance of this feature falls below this threshold. Required if billing is threshold-based."
-												}
-											}
-										}
-									},
-									"customer_data": {
-										"$ref": "#/components/schemas/CustomerData"
-									}
-								}
-							},
-							"examples": {
-								"Required": {
-									"value": {
-										"customer_id": "john-123",
-										"product_id": "pro-tier"
-									}
-								},
-								"with customer_data": {
-									"value": {
-										"customer_id": "john-123",
-										"product_id": "pro-tier",
-										"customer_data": {
-											"name": "John Yeo",
-											"email": "john@useautumn.com",
-											"fingerprint": "jsdfioudhjf98sdhfis90sd8f"
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Device attached",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"checkout_url": {
-											"type": "string",
-											"description": "URL to the Stripe checkout page. Only present if payment is required."
-										},
-										"success": {
-											"type": "boolean",
-											"description": "Indicates if the product change was successful. Only present if payment is not required."
-										},
-										"message": {
-											"type": "string",
-											"description": "Description of the action taken"
-										}
-									}
-								},
-								"examples": {
-									"Payment Required": {
-										"value": {
-											"checkout_url": "https://checkout.stripe.com/c/pay/<hash>"
-										}
-									},
-									"Card already on file": {
-										"value": {
-											"success": true,
-											"message": "Product change handled"
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/customers": {
-			"post": {
-				"description": "Create a new customer",
-				"requestBody": {
-					"description": "Customer to create",
-					"content": {
-						"application/json": {
-							"schema": {
-								"required": ["id"],
-								"type": "object",
-								"allOf": [
-									{
-										"properties": {
-											"id": {
-												"type": "string",
-												"description": "Your unique identifier for the customer"
-											}
-										}
-									},
-									{
-										"$ref": "#/components/schemas/CustomerData",
-										"description": ""
-									}
-								]
-							}
-						}
-					}
-				},
-				"responses": {
-					"201": {
-						"description": "Customer created"
-					}
-				}
-			}
-		},
-		"/customers/{customer_id}/billing_portal": {
-			"get": {
-				"description": "Get the customer's Stripe billing portal URL, so they can manage their subscription and see invoice history.",
-				"parameters": [
-					{
-						"name": "customer_id",
-						"in": "path",
-						"required": true,
-						"schema": {
-							"type": "string"
-						},
-						"description": "ID which you provided when creating the customer"
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Successfully retrieved billing portal URL",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"url": {
-											"type": "string",
-											"description": "URL to access the customer's billing portal"
-										}
-									}
-								},
-								"example": {
-									"url": "https://billing.stripe.com/session/<hash>"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/events": {
-			"post": {
-				"description": "Send a usage event to Autumn",
-				"requestBody": {
-					"description": "Event to send",
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"required": ["customer_id", "feature_id"],
-								"allOf": [
-									{
-										"properties": {
-											"customer_id": {
-												"type": "string",
-												"description": "ID which you provided when creating the customer"
-											}
-										}
-									},
-									{
-										"$ref": "#/components/schemas/EventData"
-									},
-									{
-										"properties": {
-											"customer_data": {
-												"$ref": "#/components/schemas/CustomerData"
-											}
-										}
-									}
-								]
-							},
-							"examples": {
-								"Single event": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "user-login"
-									}
-								},
-								"With Value": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "compute",
-										"value": 12
-									}
-								},
-								"With customer_data": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "compute",
-										"value": 12,
-										"customer_data": {
-											"name": "John Yeo",
-											"email": "john@useautumn.com"
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Event sent"
-					}
-				}
-			}
-		},
-		"/entitled": {
-			"post": {
-				"security": [
-					{
-						"publishableKeyAuthEntitled": []
-					}
-				],
-				"description": "Check if a customer is allowed to use a feature",
-				"requestBody": {
-					"description": "Customer to check",
-					"content": {
-						"application/json": {
-							"schema": {
-								"type": "object",
-								"required": ["customer_id", "feature_id"],
-								"properties": {
-									"customer_id": {
-										"type": "string",
-										"description": "ID which you provided when creating the customer"
-									},
-									"feature_id": {
-										"type": "string",
-										"description": "ID of the feature to check access to"
-									},
-									"required_quantity": {
-										"type": "integer",
-										"description": "If you know the quantity of the feature the end user is consuming in advance"
-									},
-									"event_data": {
-										"$ref": "#/components/schemas/EventData",
-										"description": "Record a usage event together with checking access, in the same request. For dedicated usage tracking (recommended), see [/events](/api-reference/events)."
-									},
-									"customer_data": {
-										"$ref": "#/components/schemas/CustomerData"
-									}
-								}
-							},
-							"examples": {
-								"Required": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "compute-seconds"
-									}
-								},
-								"with event_data": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "compute-seconds",
-										"event_data": {
-											"feature_id": "compute_seconds",
-											"value": 12
-										}
-									}
-								},
-								"With customer_data": {
-									"value": {
-										"customer_id": "john-123",
-										"feature_id": "user-number",
-										"customer_data": {
-											"name": "John Yeo",
-											"email": "john@useautumn.com"
-										}
-									}
-								}
-							}
-						}
-					}
-				},
-				"responses": {
-					"200": {
-						"description": "Customer has access to the product",
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"properties": {
-										"allowed": {
-											"type": "boolean",
-											"description": "Whether the customer has access to the feature"
-										},
-										"balances": {
-											"type": "array",
-											"description": "Balances of this feature / credits using this feature for the customer",
-											"items": {
-												"type": "object",
-												"properties": {
-													"feature_id": {
-														"type": "string",
-														"description": "ID of the feature"
-													},
-													"balance": {
-														"type": "integer",
-														"description": "Balance of the feature"
-													},
-													"required": {
-														"type": "integer",
-														"description": "Required amount of the feature"
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	},
-	"components": {
-		"schemas": {
-			"CustomerData": {
-				"type": "object",
-				"description": "Properties to create a new customer. If a customer with the provided `customer_id` already exists, this object is ignored. Alternatively, use the [/customers](/api-reference/customers) endpoint.",
-				"properties": {
-					"name": {
-						"type": "string",
-						"description": "Name of the customer"
-					},
-					"email": {
-						"type": "string",
-						"description": "Email of the customer"
-					},
-					"fingerprint": {
-						"type": "string",
-						"description": "Unique fingerprint of the customer, used to prevent free trial abuse (eg serial_number, device_id, etc)"
-					}
-				}
-			},
-			"EventData": {
-				"type": "object",
-				"properties": {
-					"feature_id": {
-						"type": "string",
-						"description": "ID of the feature to track usage for."
-					},
-					"value": {
-						"type": "integer",
-						"default": 1,
-						"description": "How much of the event should be counted towards the balance. Default is 1."
-					},
-					"event_name": {
-						"type": "string",
-						"description": "For use in place of the feature_id. This should be used if multiple features are tracked in the same event."
-					},
-					"idempotency_key": {
-						"type": "string",
-						"description": "Unique identifier for the event. If the same event is sent multiple times, it will be ignored."
-					},
-					"properties": {
-						"type": "object",
-						"description": "Event properties."
-					}
-				}
-			},
-			"Error": {
-				"required": ["error", "message"],
-				"type": "object",
-				"properties": {
-					"error": {
-						"type": "integer",
-						"format": "int32"
-					},
-					"message": {
-						"type": "string"
-					}
-				}
-			}
-		},
-		"securitySchemes": {
-			"publishableKeyAuthAttach": {
-				"type": "http",
-				"scheme": "bearer",
-				"description": "You can use your Secret or Publishable key for this endpoint. Using your Publishable Key will always return a `checkout_url`. Using your Secret Key allows you to handle payments automatically (eg, for plan upgrades)."
-			},
-			"secretKeyAuth": {
-				"type": "http",
-				"scheme": "bearer",
-				"description": "Your secret key must be used as the Bearer token for this endpoint."
-			},
-			"publishableKeyAuthEntitled": {
-				"type": "http",
-				"scheme": "bearer",
-				"description": "You can use your Secret or Publishable key for this endpoint. To include usage events however, you must use your Secret key."
-			}
-		}
-	}
+  "paths": {
+    "/attach": {
+      "post": {
+        "operationId": "attach",
+        "security": [
+          {
+            "publishableKeyAuthAttach": []
+          }
+        ],
+        "description": "Returns a Stripe Checkout URL for the customer to complete their purchase, or handles the purchase if the customer's card is already on file.",
+        "requestBody": {
+          "description": "Customer and product to attach",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "product_id"],
+                "properties": {
+                  "customer_id": {
+                    "type": "string",
+                    "description": "Your unique identifier for the customer"
+                  },
+                  "product_id": {
+                    "type": "string",
+                    "description": "Product ID, set when creating the product in the Autumn dashboard"
+                  },
+                  "product_ids": {
+                    "type": "array",
+                    "description": "List of product IDs to attach to the customer in the same subscription or transaction",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "success_url": {
+                    "type": "string",
+                    "description": "URL to redirect to after the purchase is successful"
+                  },
+                  "force_checkout": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Always return a Stripe Checkout URL, even if the customer's card is already on file."
+                  },
+                  "options": {
+                    "type": "array",
+                    "description": "An array of billing options for the product. Required for some pricing types.",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "feature_id": {
+                          "type": "string",
+                          "description": "Feature ID of the feature that will be affected by the options."
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "description": "Quantity of the feature (eg number of seats) to be purchased. Required if billing is in-advance usage-based."
+                        },
+                        "threshold": {
+                          "type": "integer",
+                          "description": "Customer will be charged for this product when the balance of this feature falls below this threshold. Required if billing is threshold-based."
+                        }
+                      }
+                    }
+                  },
+                  "customer_data": {
+                    "$ref": "#/components/schemas/CustomerData"
+                  }
+                }
+              },
+              "examples": {
+                "Required": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "product_id": "pro-tier"
+                  }
+                },
+                "with customer_data": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "product_id": "pro-tier",
+                    "customer_data": {
+                      "name": "John Yeo",
+                      "email": "john@useautumn.com",
+                      "fingerprint": "jsdfioudhjf98sdhfis90sd8f"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device attached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "checkout_url": {
+                      "type": "string",
+                      "description": "URL to the Stripe checkout page. Only present if payment is required."
+                    },
+                    "success": {
+                      "type": "boolean",
+                      "description": "Indicates if the product change was successful. Only present if payment is not required."
+                    },
+                    "message": {
+                      "type": "string",
+                      "description": "Description of the action taken"
+                    }
+                  }
+                },
+                "examples": {
+                  "Payment Required": {
+                    "value": {
+                      "checkout_url": "https://checkout.stripe.com/c/pay/<hash>"
+                    }
+                  },
+                  "Card already on file": {
+                    "value": {
+                      "success": true,
+                      "message": "Product change handled"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers": {
+      "post": {
+        "operationId": "customers",
+        "description": "Create a new customer",
+        "requestBody": {
+          "description": "Customer to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": ["id"],
+                "type": "object",
+                "allOf": [
+                  {
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Your unique identifier for the customer"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/CustomerData",
+                    "description": ""
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created"
+          }
+        }
+      }
+    },
+    "/customers/{customer_id}/billing_portal": {
+      "get": {
+        "operationId": "billing_portal",
+        "description": "Get the customer's Stripe billing portal URL, so they can manage their subscription and see invoice history.",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID which you provided when creating the customer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved billing portal URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "URL to access the customer's billing portal"
+                    }
+                  }
+                },
+                "example": {
+                  "url": "https://billing.stripe.com/session/<hash>"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events": {
+      "post": {
+        "operationId": "events",
+        "description": "Send a usage event to Autumn",
+        "requestBody": {
+          "description": "Event to send",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "feature_id"],
+                "allOf": [
+                  {
+                    "properties": {
+                      "customer_id": {
+                        "type": "string",
+                        "description": "ID which you provided when creating the customer"
+                      }
+                    }
+                  },
+                  {
+                    "$ref": "#/components/schemas/EventData"
+                  },
+                  {
+                    "properties": {
+                      "customer_data": {
+                        "$ref": "#/components/schemas/CustomerData"
+                      }
+                    }
+                  }
+                ]
+              },
+              "examples": {
+                "Single event": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "user-login"
+                  }
+                },
+                "With Value": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "compute",
+                    "value": 12
+                  }
+                },
+                "With customer_data": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "compute",
+                    "value": 12,
+                    "customer_data": {
+                      "name": "John Yeo",
+                      "email": "john@useautumn.com"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Event sent"
+          }
+        }
+      }
+    },
+    "/entitled": {
+      "post": {
+        "operationId": "entitled",
+        "security": [
+          {
+            "publishableKeyAuthEntitled": []
+          }
+        ],
+        "description": "Check if a customer is allowed to use a feature",
+        "requestBody": {
+          "description": "Customer to check",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["customer_id", "feature_id"],
+                "properties": {
+                  "customer_id": {
+                    "type": "string",
+                    "description": "ID which you provided when creating the customer"
+                  },
+                  "feature_id": {
+                    "type": "string",
+                    "description": "ID of the feature to check access to"
+                  },
+                  "required_quantity": {
+                    "type": "integer",
+                    "description": "If you know the quantity of the feature the end user is consuming in advance"
+                  },
+                  "event_data": {
+                    "$ref": "#/components/schemas/EventData",
+                    "description": "Record a usage event together with checking access, in the same request. For dedicated usage tracking (recommended), see [/events](/api-reference/events)."
+                  },
+                  "customer_data": {
+                    "$ref": "#/components/schemas/CustomerData"
+                  }
+                }
+              },
+              "examples": {
+                "Required": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "compute-seconds"
+                  }
+                },
+                "with event_data": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "compute-seconds",
+                    "event_data": {
+                      "feature_id": "compute_seconds",
+                      "value": 12
+                    }
+                  }
+                },
+                "With customer_data": {
+                  "value": {
+                    "customer_id": "john-123",
+                    "feature_id": "user-number",
+                    "customer_data": {
+                      "name": "John Yeo",
+                      "email": "john@useautumn.com"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Customer has access to the product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "allowed": {
+                      "type": "boolean",
+                      "description": "Whether the customer has access to the feature"
+                    },
+                    "balances": {
+                      "type": "array",
+                      "description": "Balances of this feature / credits using this feature for the customer",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "feature_id": {
+                            "type": "string",
+                            "description": "ID of the feature"
+                          },
+                          "balance": {
+                            "type": "integer",
+                            "description": "Balance of the feature"
+                          },
+                          "required": {
+                            "type": "integer",
+                            "description": "Required amount of the feature"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomerData": {
+        "type": "object",
+        "description": "Properties to create a new customer. If a customer with the provided `customer_id` already exists, this object is ignored. Alternatively, use the [/customers](/api-reference/customers) endpoint.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the customer"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email of the customer"
+          },
+          "fingerprint": {
+            "type": "string",
+            "description": "Unique fingerprint of the customer, used to prevent free trial abuse (eg serial_number, device_id, etc)"
+          }
+        }
+      },
+      "EventData": {
+        "type": "object",
+        "properties": {
+          "feature_id": {
+            "type": "string",
+            "description": "ID of the feature to track usage for."
+          },
+          "value": {
+            "type": "integer",
+            "default": 1,
+            "description": "How much of the event should be counted towards the balance. Default is 1."
+          },
+          "event_name": {
+            "type": "string",
+            "description": "For use in place of the feature_id. This should be used if multiple features are tracked in the same event."
+          },
+          "idempotency_key": {
+            "type": "string",
+            "description": "Unique identifier for the event. If the same event is sent multiple times, it will be ignored."
+          },
+          "properties": {
+            "type": "object",
+            "description": "Event properties."
+          }
+        }
+      },
+      "Error": {
+        "required": ["error", "message"],
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "publishableKeyAuthAttach": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "You can use your Secret or Publishable key for this endpoint. Using your Publishable Key will always return a `checkout_url`. Using your Secret Key allows you to handle payments automatically (eg, for plan upgrades)."
+      },
+      "secretKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Your secret key must be used as the Bearer token for this endpoint."
+      },
+      "publishableKeyAuthEntitled": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "You can use your Secret or Publishable key for this endpoint. To include usage events however, you must use your Secret key."
+      }
+    }
+  }
 }
